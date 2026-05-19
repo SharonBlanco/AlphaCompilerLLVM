@@ -1,0 +1,63 @@
+let
+    const LIMITE ~ 50 ;
+    var texto : string ;
+    var numero : int ;
+    var bandera : bool ;
+    int darNumero():
+            return 10 ;
+
+    string darTexto():
+            return "soy un string" ;
+
+    int sumar(int x; int y):
+        return x + y ;
+
+    void funcionVacia():
+        return "No soy void" ;
+
+    int funcionSinReturn(int a):
+        texto := "Falta el return"
+       /*begin
+        texto := "Falta el return";
+        return 10
+        end*/ //esto sería con return
+in
+    begin
+        // 1. Asignacion a constante
+        LIMITE := 100 ;
+
+        // 2. Operacion con tipos incompatibles
+        numero := 5 + "texto falso" ;
+
+        texto := "hola" ;
+        bandera := true ;
+
+        // 4. Errores en paso de argumentos (cantidad y tipos)
+        numero := sumar(10) ;
+        numero := sumar(10; "20") ;
+        numero := sumar(10; 20; 30) ;
+
+        // 5. Confundir metodos con variables
+        sumar := 500 ;
+        texto() ;
+
+        // 6. Condicion que no es booleana en un if y un while
+        if 5 + 5 then
+            numero := 1 ;
+
+        while "ciclo" do
+            numero := 2 ;
+
+        // 7. Tipos incompatibles en asignacion
+        numero := "esto es un string" ;
+
+        // 8. Llamar variable que no existe
+        variableFantasma := 10;
+
+        // 9. Pruebas del menos unario (SUB) en funciones
+                // ESTA DEBE TIRAR ERROR: No se le puede poner '-' a una función string
+        numero := -darTexto() ;
+
+        // ESTA DEBE PASAR LIMPIA: Sí se le puede poner '-' a una función int
+             numero := -darNumero()
+    end

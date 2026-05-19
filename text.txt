@@ -1,0 +1,60 @@
+let  /* HOÑA */  //mdjsjfisojfd
+    int factorial(int numero; int sum):  /* HOÑA */
+    begin  /* HOÑA */
+        let  /* HOÑA */
+           var actual : int;  /* HOÑA */
+            var probar : string;  /* HOÑA */
+            var probar2: char;  /* HOÑA */
+            var probar3: char;
+            var probar4 : char;
+            var probarBool : bool;
+            var probar5 : char;
+            var probar6 : char;
+            var probar7 : char;
+            var probar8 : char;
+            var probar9 : char;
+            var probar10 : char;
+            var probar11 : char;
+            var probar12 : char;
+            var probar13 : char;
+            var probar14 : char;
+            var probar15 : char;
+            var probar16 : char;
+            var probar17 : char;
+            var probar18 : char
+            in  /* HOÑA */
+            begin /* HOÑA */
+                probar := "$%&@\n"; /* HOÑA */
+                probar3 := '3';
+                probar4 := ' ';
+                probar5 := '@';
+                probar6 := '#';
+                probar7 := '$';
+                probar8 := '%';
+                probar9 := '&';
+                probar10 := '\n';
+                probar11 := '\t';
+                probar12 := '\r';
+                probar13 := '\\';
+                probar14 := '\'';
+                probar15 := '\"';
+                probar16 := '\@';
+                probar17 := '\3';
+                probar18 := ' ';
+                actual := numero; /* HOÑA */
+                while (actual > 0) do /* HOÑA */
+                   begin
+                   sum := actual * sum; /* HOÑA */
+                   actual := actual - 1 /* HOÑA */
+                   end
+            end; /* HOÑA */
+            return numero /* HOÑA */
+    end; /* HOÑA */
+    var numero : int; /* HOÑA */
+    var sum : int  /* HOÑA */
+    in /* HOÑA */
+        begin /* HOÑA */
+            numero := 5; /* HOÑA */
+            sum := 1; /* HOÑA */
+            print(factorial(numero; sum)) /* HOÑA */
+        end /* HOÑA */   //mdjsjfisojfd

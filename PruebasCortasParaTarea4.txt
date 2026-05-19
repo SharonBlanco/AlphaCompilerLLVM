@@ -1,0 +1,182 @@
+// ============================================================================
+// ARCHIVO DE PRUEBAS DE ESTRÉS (STRESS TESTING)
+// Instrucciones: Descomente cada bloque (uno a la vez) para probar la 
+// resiliencia del Type Checker ante errores críticos y casos borde.
+// Ninguno de estos bloques debe causar la caída del compilador (Crash/Exception).
+// Todos deben ser atrapados elegantemente y mostrar el error de tipo.
+// ============================================================================
+
+
+/* 
+  PRUEBA 1: Llamada a función sin parámetros
+  Objetivo: Verificar que las listas de argumentos vacías no generen 
+  un NullPointerException al intentar evaluar ctx.argumentList().
+*/
+/*
+let
+    var a : int ;
+    void saludar(): a := 5
+in
+    saludar()
+*/
+
+
+/* 
+  PRUEBA 2: Return fuera de función
+  Objetivo: Verificar que el programa no intente hacer un .peek() de la pila methodStack vacía,
+  evitando un EmptyStackException. Si va a tirar el error con la funcion syntax error pero sin tirar el programa
+*/
+/*
+return 5
+*/
+
+
+/* 
+  PRUEBA 3: Expresión inválida en declaración de constante
+  Objetivo: Validar que el error de suma (bool + string) se atrape a tiempo 
+  y no intente registrar la constante fallida, evitando un NullPointerException.
+*/
+/*
+let
+    const miConstante ~ (true + "hola") ;
+    var fact : int
+in
+    fact := 10
+*/
+
+
+/* 
+  PRUEBA 4: Errores dentro de bloques anidados (If / While)
+  Objetivo: Comprobar que el compilador no se "salta" el cuerpo de los ciclos
+  (visitSingleCommand) y logra detectar variables no declaradas y errores de 
+  operador en la zona interna.
+*/
+/*
+while true do
+    variableQueNoExiste := "hola" - 500
+*/
+
+
+/* 
+  PRUEBA 5: Return
+  Objetivo: Comprobar que una excepción de tipo lanzada DENTRO de la expresión
+  de un return sea atrapada correctamente por el visitReturnSingleCommand.
+*/
+/*
+let
+    int calcular():
+        return 5 + "texto falso"
+in
+    calcular()
+*/
+
+
+/* 
+  PRUEBA 6: Constante radiactiva y mutación de constante
+  Objetivo: Disparar dos errores. Primero, que la constante tiene tipos inválidos.
+  Segundo, validar que no se le pueda reasignar un valor a una constante.
+*/
+/*
+let
+    const pi ~ 3 + "catorce"
+in
+    pi := 3
+*/
+
+
+/* 
+  PRUEBA 7: El Stack (Recuperación de memoria)
+  Objetivo: Verificar que si una función se declara con un tipo inexistente, 
+  el compilador igual hace el .pop() en el methodStack, evitando dejar 
+  "basura" en la pila que corrompa la verificación de la siguiente función.
+*/
+/*
+let
+    TipoInventadoMalo funcionMala():
+        a := 1 ;
+
+    int funcionBuena():
+        return 5
+in
+    funcionBuena()
+*/
+
+/*
+  PRUEBA 9: Metodo con nombre de misma variable
+  Objetivo: Verificar que si una función se declara con un nombre igual al de una variable, este
+  de igual manera valide sus parámetros de manera correcta.
+*/
+/*let
+    var x : int ;
+    int x(int a): return a
+in
+    x(5)*/
+
+//  PRUEBA 10
+/*
+let
+    TipoInventadoMalo funcionMala():
+        a := 1
+in
+    a := 2*/
+
+/* PRUEBA 11: Recursividad Mutua (Debe dar "Function no defined") */
+/*let
+    int ping(int x):
+        return pong(x) ; // Error: pong no existe aún
+
+    int pong(int x):
+        return ping(x)
+in
+    ping(5)*/
+
+/* PRUEBA 12: Función vacía sin return (Debe dar "Missing return") */
+    /*let
+       var x : int;
+        int funcionMuda():
+            begin
+            x := 10
+            end
+    in
+        numero := funcionMuda()*/
+
+// PRUEBA 13: Funciones Anidadas (Debe compilar perfecto)
+/*let
+    var numero : int;
+    int externa():
+        let
+            int interna():
+                return 100
+        in
+            return interna() + 5
+in
+    numero := externa()*/
+
+// PRUEBA 14: Comparación de booleanos en un IF (Debe compilar perfecto)
+/*let
+var numero : int
+in
+if (5 == 3) == (2 == 1) then
+    numero := 0
+else
+    numero := 1*/
+
+
+ /* PRUEBA 15: Asignar función void a variable int (Debe dar error de tipos) */
+ /*let
+     void noHagoNada():
+         numero := 1
+ in
+     // numero es int, noHagoNada es void (4)
+     numero := noHagoNada()*/
+
+
+/* PRUEBA: Comparaciones encadenadas (Debe dar "Incompatible types") */
+/*let
+   var numero : int
+   in
+if 5 < 3 < 2 then
+    numero := 10*/
+// ============================================================================
+// FIN DEL CAMPO DE PRUEBAS
+// ============================================================================

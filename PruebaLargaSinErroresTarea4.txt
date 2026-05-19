@@ -1,0 +1,42 @@
+let
+    const MAXIMO ~ 100 ;
+    const PI ~ 3 ;
+    var iterador : int ;
+    var completado : bool ;
+    var etiqueta : string ;
+    var letra : char ;
+
+    int calcularMagia(int base; int multiplicador):
+        return (base * multiplicador) + PI ;
+
+    int factorial(int n):
+        if n <= 1 then
+            return 1
+        else
+            return n * factorial(n - 1) ;
+
+    void procesarCiclo(int limite; string nombre):
+        begin
+            iterador := 0 ;
+            etiqueta := nombre ;
+
+            while iterador < limite do
+                begin
+                    if iterador == 50 then
+                        completado := true
+                    else
+                        completado := false ;
+
+                    iterador := iterador + 1
+                end
+        end
+in
+    begin
+        letra := 'A' ;
+        completado := false ;
+
+        if MAXIMO >= 10 then
+            procesarCiclo(calcularMagia(-5; -2); "Prueba Superada")
+        else
+            iterador := factorial(5)
+    end

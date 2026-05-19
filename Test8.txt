@@ -1,0 +1,21 @@
+let
+    var x:int;
+    var y: char;
+    int calc(int n):
+      x:= 10;
+    var fact : int;
+
+    void print(string x):
+        x := 10;
+    void calc2(int number):
+           print(number)
+in
+    begin
+    fact := 5+3*2;
+
+    calc2(calc(fact));
+
+
+    // acá debe fallar
+    y := 10
+end

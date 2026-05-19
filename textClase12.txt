@@ -1,0 +1,42 @@
+/*let
+        int main():
+        begin
+            let
+               var a: int;
+               var b: int;
+               var c: int
+            in
+            begin
+                a:=10;
+                b:=20;
+                c:=a+b;
+                print(c)
+            end;
+            return 0
+        end
+
+   in
+
+        print("fin")*/
+
+let
+    int main():
+    begin
+        let
+            var a:int;
+            var b:int;
+            var c:int
+        in
+        begin
+            a:= 10;
+            b:=20;
+            c:= a+b;
+            print(c)
+
+        end;
+        return 0
+
+    end
+
+in
+    print()

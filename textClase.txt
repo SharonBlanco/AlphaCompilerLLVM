@@ -1,0 +1,14 @@
+let
+    void suma(a:int, b:int) begin
+        return a + 'b'
+    end;
+
+    int doble(x:int) begin
+        return x * "hola mundo"
+    end
+in
+    begin
+        suma(1,2);
+        z := doble(y) + true
+    end
+
