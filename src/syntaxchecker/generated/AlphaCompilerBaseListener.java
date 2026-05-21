@@ -149,13 +149,13 @@ public class AlphaCompilerBaseListener implements AlphaCompilerListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx) { }
+	@Override public void enterConstSingleDeclaration2(AlphaCompilerParser.ConstSingleDeclaration2Context ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx) { }
+	@Override public void exitConstSingleDeclaration2(AlphaCompilerParser.ConstSingleDeclaration2Context ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -180,6 +180,18 @@ public class AlphaCompilerBaseListener implements AlphaCompilerListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitVarSingleDeclaration(AlphaCompilerParser.VarSingleDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

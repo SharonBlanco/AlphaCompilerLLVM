@@ -132,17 +132,17 @@ public interface AlphaCompilerListener extends ParseTreeListener {
 	 */
 	void exitComplexDeclaration(AlphaCompilerParser.ComplexDeclarationContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code constSingleDeclaration}
+	 * Enter a parse tree produced by the {@code constSingleDeclaration2}
 	 * labeled alternative in {@link AlphaCompilerParser#singleDeclaration}.
 	 * @param ctx the parse tree
 	 */
-	void enterConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx);
+	void enterConstSingleDeclaration2(AlphaCompilerParser.ConstSingleDeclaration2Context ctx);
 	/**
-	 * Exit a parse tree produced by the {@code constSingleDeclaration}
+	 * Exit a parse tree produced by the {@code constSingleDeclaration2}
 	 * labeled alternative in {@link AlphaCompilerParser#singleDeclaration}.
 	 * @param ctx the parse tree
 	 */
-	void exitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx);
+	void exitConstSingleDeclaration2(AlphaCompilerParser.ConstSingleDeclaration2Context ctx);
 	/**
 	 * Enter a parse tree produced by the {@code varSingleDeclaration2}
 	 * labeled alternative in {@link AlphaCompilerParser#singleDeclaration}.
@@ -165,6 +165,16 @@ public interface AlphaCompilerListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitVarSingleDeclaration(AlphaCompilerParser.VarSingleDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AlphaCompilerParser#constSingleDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AlphaCompilerParser#constSingleDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link AlphaCompilerParser#paramList}.
 	 * @param ctx the parse tree

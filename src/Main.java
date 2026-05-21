@@ -12,7 +12,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
 
 
-        CharStream input = CharStreams.fromFileName("textClase12.txt");
+        CharStream input = CharStreams.fromFileName("PruebasTxt/PruebaTarea5.txt");
         //CharStream input = CharStreams.fromFileName("PruebasCortasParaTarea4.txt");
         //CharStream input = CharStreams.fromFileName("PruebaLargaSinErroresTarea4.txt");
         //CharStream input = CharStreams.fromFileName("PruebaLargaConErroresTarea4.txt");
@@ -26,6 +26,7 @@ public class Main {
         parser.removeErrorListeners();
         lexer.addErrorListener(myErrorListener);
         parser.addErrorListener(myErrorListener);
+
 
 
         ParseTree tree = parser.program();
@@ -44,9 +45,6 @@ public class Main {
             else {
                 System.out.println("Compilation succesful!!");
                 (new AlphaCompilerEncoder()).visit(tree);
-                //todo: crear el obj y el ee a partir del LLVM Module
-                //el codigo de maquina llvm, tiene un punto de entrada main, hay que crear una funcion main, pero alpha no tiene mail, solo lets,
-                //alpha no es candidato para llvm, pero como nuestro proyecto si va a tener para llvm, entonces con alpha nos vamos a acomodar
             }
         }
     }

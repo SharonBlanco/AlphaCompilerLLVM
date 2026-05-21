@@ -1,0 +1,39 @@
+let
+    int main():
+        let
+            var x: int;
+            var y: int;
+            var z: int;
+            var flag: bool
+        in
+            begin
+                x := 10;
+                y := 20;
+                z := x + y;
+                print(z);
+
+                z := x * y - 5;
+                print(z);
+
+                flag := x < y;
+
+                if flag then
+                    print(1)
+                else
+                    print(0);
+
+                z := 0;
+                while z < 5 do
+                    begin
+                        print(z);
+                        z := z + 1
+                    end;
+
+                print(-(x + y));
+
+                z := (x + y) * (x - y);
+                print(z);
+                return 0
+            end
+in
+    main()

@@ -84,12 +84,12 @@ public interface AlphaCompilerVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitComplexDeclaration(AlphaCompilerParser.ComplexDeclarationContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code constSingleDeclaration}
+	 * Visit a parse tree produced by the {@code constSingleDeclaration2}
 	 * labeled alternative in {@link AlphaCompilerParser#singleDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx);
+	T visitConstSingleDeclaration2(AlphaCompilerParser.ConstSingleDeclaration2Context ctx);
 	/**
 	 * Visit a parse tree produced by the {@code varSingleDeclaration2}
 	 * labeled alternative in {@link AlphaCompilerParser#singleDeclaration}.
@@ -103,6 +103,12 @@ public interface AlphaCompilerVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitVarSingleDeclaration(AlphaCompilerParser.VarSingleDeclarationContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AlphaCompilerParser#constSingleDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AlphaCompilerParser#paramList}.
 	 * @param ctx the parse tree

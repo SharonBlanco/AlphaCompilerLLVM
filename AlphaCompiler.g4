@@ -89,11 +89,15 @@ singleCommand     : identifier ASSIGN expression                                
                   | RETURN expression?                                                                                      #returnSingleCommand;
 declaration       :( (singleDeclaration| complexDeclaration) (SEMI (singleDeclaration | complexDeclaration))* )             ;
 complexDeclaration: function                                                                                                ;
-singleDeclaration : CONST ID VIR expression                                                                                 #constSingleDeclaration
+singleDeclaration : CONST ID VIR expression                                                                                 #constSingleDeclaration2
                   | varSingleDeclaration                                                                                #varSingleDeclaration2;
 varSingleDeclaration
 locals[org.bytedeco.llvm.LLVM.LLVMValueRef nombreLLVM = null] //este es el nombre que llevaría en llvm, digamos que el nombre sería larguisimo, enllvm melo va a cambiar
 :   VAR ID COLON typeDenoter                                                                                                ;
+
+constSingleDeclaration
+locals[org.bytedeco.llvm.LLVM.LLVMValueRef nombreLLVM = null, org.bytedeco.llvm.LLVM.LLVMTypeRef tipoLLVM = null]
+:   CONST ID VIR expression ;
 
 paramList         : param  (SEMI param)*;
 param             : typeDenoter                                                                                             ;
