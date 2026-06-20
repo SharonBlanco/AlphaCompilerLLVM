@@ -269,6 +269,3 @@ AlphaCompilerLLVM/
 
 This is an academic / learning-focused compiler project. The strongest completed part is the compiler frontend: grammar, parsing, semantic analysis, type checking, scope handling, and structured error reporting. The LLVM backend is present as a prototype and can be extended to support full native code generation.
 
-## License
-
-No license file was found in the project archive. Add a license before publishing if the repository will be shared publicly.
