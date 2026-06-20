@@ -1,4 +1,5 @@
 package typechecker;
+
 import org.antlr.v4.runtime.Token;
 import syntaxchecker.generated.*;
 import java.util.LinkedList;
@@ -6,23 +7,69 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Stack;
 
+/**
+ * Verificador de tipos (Type Checker) del compilador AlphaCompiler.
+ *
+ * <p>Implementa el patrón Visitor sobre el árbol sintáctico generado por ANTLR.
+ * Recorre el árbol y verifica que todas las operaciones, asignaciones, llamadas
+ * a funciones y retornos sean compatibles con los tipos declarados.</p>
+ *
+ * <p>Los tipos se representan internamente con enteros:
+ * <ul>
+ *   <li>0 = {@code int}</li>
+ *   <li>1 = {@code char}</li>
+ *   <li>2 = {@code bool}</li>
+ *   <li>3 = {@code string}</li>
+ *   <li>4 = {@code void} (funciones sin retorno)</li>
+ *   <li>-1 = tipo inválido / error</li>
+ * </ul>
+ * </p>
+ *
+ * <p>Los errores no detienen el análisis: se acumulan en {@code errorList}
+ * y se reportan todos juntos al finalizar mediante {@link #printErrors()}.</p>
+ */
 public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
-    private SymbolsTable symbolTable; // tabla de símbolos para buscar variables y funciones
-    private List<String> errorList; // lista donde se van acumulando los errores de tipo
-    private Stack<Integer> methodStack = new Stack<>(); // pila para saber en qué tipo de función estamos (para validar returns)
-    private Stack<Boolean> returnFoundStack = new Stack<>(); // pila para saber si ya se encontró un return en la función actual
 
+    /** Tabla de símbolos para buscar variables y funciones declaradas. */
+    private SymbolsTable symbolTable;
+
+    /** Lista donde se van acumulando los errores de tipo encontrados. */
+    private List<String> errorList;
+
+    /** Pila para saber en qué tipo de función estamos (para validar returns).
+     *  Cada vez que se entra a una función se apila su tipo de retorno. */
+    private Stack<Integer> methodStack = new Stack<>();
+
+    /** Pila para saber si ya se encontró un return en la función actual.
+     *  Se usa en conjunto con {@code methodStack} para verificar que toda
+     *  función con retorno no-void efectivamente retorne un valor. */
+    private Stack<Boolean> returnFoundStack = new Stack<>();
+
+    /**
+     * Crea un TypeChecker con una tabla de símbolos y lista de errores vacías.
+     */
     public AlphaCompilerTypeChecker() {
         this.symbolTable = new SymbolsTable();
         this.errorList = new LinkedList<>();
     }
 
-    // para preguntar desde afuera si hubo errores
+    // -------------------------------------------------------------------------
+    // API pública de reporte
+    // -------------------------------------------------------------------------
+
+    /**
+     * Permite preguntar desde afuera si el análisis encontró algún error de tipos.
+     *
+     * @return {@code true} si hay al menos un error acumulado
+     */
     public boolean hasErrors() {
         return !this.errorList.isEmpty();
     }
 
-    // imprime todos los errores acumulados
+    /**
+     * Imprime todos los errores de tipo acumulados durante el análisis.
+     * Si no hubo errores, imprime un mensaje de compilación exitosa.
+     */
     public void printErrors() {
         if (hasErrors()) {
             System.out.println("Compilation failed");
@@ -34,19 +81,51 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         }
     }
 
-    // reporte de error con el token que causó el problema
+    // -------------------------------------------------------------------------
+    // Métodos privados de reporte de errores
+    // -------------------------------------------------------------------------
+
+    /**
+     * Registra un error de tipo con el token que lo causó.
+     * El mensaje resultante incluye el texto del token y su posición en el fuente.
+     *
+     * @param msg            descripción del error
+     * @param offendingToken token donde se detectó el problema
+     */
     private void syntaxError(String msg, Token offendingToken) {
-        String error = "TYPE ERROR: " + msg + ": (" + offendingToken.getText() + ") " + " in [line " + offendingToken.getLine() + ": " + "Column " + offendingToken.getCharPositionInLine() + "]";
+        String error = "TYPE ERROR: " + msg + ": (" + offendingToken.getText() + ") "
+                + " in [line " + offendingToken.getLine() + ": "
+                + "Column " + offendingToken.getCharPositionInLine() + "]";
         this.errorList.add(error);
     }
 
-    // reporte de error cuando hay dos tipos incompatibles (ej: int y string)
+    /**
+     * Registra un error de tipo cuando hay dos tipos incompatibles (ej: int y string).
+     * Incluye los nombres legibles de ambos tipos en el mensaje.
+     *
+     * @param msg            descripción del error
+     * @param offendingToken token donde se detectó el problema
+     * @param type1          primer tipo involucrado
+     * @param type2          segundo tipo involucrado
+     */
     private void syntaxError(String msg, Token offendingToken, int type1, int type2) {
-        String error = "TYPE ERROR: " + msg + " " + convertTipeToString(type1) + " and " + convertTipeToString(type2) + ": (" + offendingToken.getText() + ") " + " in [line " + offendingToken.getLine() + ": " + "Column " + offendingToken.getCharPositionInLine() + "]";
+        String error = "TYPE ERROR: " + msg + " " + convertTipeToString(type1) + " and "
+                + convertTipeToString(type2) + ": (" + offendingToken.getText() + ") "
+                + " in [line " + offendingToken.getLine() + ": "
+                + "Column " + offendingToken.getCharPositionInLine() + "]";
         this.errorList.add(error);
     }
 
-    // convierte el número de tipo a su nombre legible (0=int, 1=char, etc)
+    /**
+     * Convierte el número interno de tipo a su nombre legible.
+     * Útil para generar mensajes de error comprensibles.
+     *
+     * <p>Mapeo: 0=int, 1=char, 2=bool, 3=string. Cualquier otro valor
+     * se reporta como "inexistent type".</p>
+     *
+     * @param type número interno del tipo
+     * @return nombre legible del tipo
+     */
     private String convertTipeToString(Integer type) {
         if (type == 0) {
             return "int";
@@ -66,11 +145,25 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return super.clone();
     }
 
+    // -------------------------------------------------------------------------
+    // Visitors de nodos raíz y operadores
+    // -------------------------------------------------------------------------
+
+    /**
+     * Visita el nodo raíz del programa.
+     * Delega directamente a los hijos; visita el {@code singleCommand} del programa.
+     */
     @Override
     public Object visitProgram(AlphaCompilerParser.ProgramContext ctx) {
         return super.visitProgram(ctx); // delega, visita el singleCommand del programa
     }
 
+    /**
+     * Visita un operador y devuelve su token para poder identificarlo después.
+     * Cada rama verifica cuál operador está presente y retorna su símbolo.
+     *
+     * @return el {@link Token} del operador encontrado, o {@code null} si ninguno aplica
+     */
     @Override
     public Object visitOperator(AlphaCompilerParser.OperatorContext ctx) {
         // devuelve el token del operador que encontró, para saber cuál es después
@@ -100,26 +193,69 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
             return null;
     }
 
+    // -------------------------------------------------------------------------
+    // Visitors de expresiones primarias (literales e identificadores)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Visita el literal {@code false}.
+     *
+     * @return 2 (false es tipo bool = 2)
+     */
     @Override
     public Object visitFalsePrimaryExpression(AlphaCompilerParser.FalsePrimaryExpressionContext ctx) {
         return 2; // false es tipo bool = 2
     }
 
+    /**
+     * Visita el literal {@code true}.
+     *
+     * @return 2 (true es tipo bool = 2)
+     */
     @Override
     public Object visitTruePrimaryExpression(AlphaCompilerParser.TruePrimaryExpressionContext ctx) {
         return 2; // true es tipo bool = 2
     }
 
+    /**
+     * Visita un literal de tipo {@code string}.
+     *
+     * @return 3 (un literal string es tipo 3)
+     */
     @Override
     public Object visitStringPrimaryExpression(AlphaCompilerParser.StringPrimaryExpressionContext ctx) {
         return 3; // un literal string es tipo 3
     }
 
+    /**
+     * Visita un literal de tipo {@code char}.
+     *
+     * @return 1 (un literal char es tipo 1)
+     */
     @Override
     public Object visitCharPrimaryExpression(AlphaCompilerParser.CharPrimaryExpressionContext ctx) {
         return 1; // un literal char es tipo 1
     }
 
+    /**
+     * Visita un literal numérico entero.
+     *
+     * @return 0 (un número siempre es tipo int = 0)
+     */
+    @Override
+    public Object visitNumPrimaryExpression(AlphaCompilerParser.NumPrimaryExpressionContext ctx) {
+        return 0; // un número siempre es tipo int = 0
+    }
+
+    /**
+     * Visita una expresión entre paréntesis, posiblemente precedida por un signo negativo.
+     *
+     * <p>Visita la expresión interior para determinar su tipo. Si lleva un {@code -}
+     * al frente, verifica que la expresión sea de tipo {@code int}, ya que solo los
+     * enteros pueden negarse.</p>
+     *
+     * @return el tipo de la expresión entre paréntesis, o -1 si hubo error
+     */
     @Override
     public Object visitGroupPrimaryExpression(AlphaCompilerParser.GroupPrimaryExpressionContext ctx) {
         int returnType = -1;
@@ -138,85 +274,16 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
-    @Override
-    public Object visitComplexDeclaration(AlphaCompilerParser.ComplexDeclarationContext ctx) {
-        Token id = null;
-        int type = -1;
-
-        // sacar el tipo de retorno de la función
-        if (ctx.function().typeDenoter() != null) {
-            id = (Token) visit(ctx.function().typeDenoter());
-            type = verifyType(id.getText());
-            this.methodStack.push(type); // meter el tipo a la pila para validar returns después
-        } else {
-            type = 4; // si no tiene tipo es void (4)
-            this.methodStack.push(type);
-        }
-
-        if (type != -1) {
-            LinkedList<Integer> params = null;
-
-            // buscar si ya existe algo con ese nombre en el nivel actual
-            SymbolsTable.Ident ident = this.symbolTable.searchActualLevel(ctx.function().ID().getText());
-
-            // armar la lista de tipos de parámetros
-            if (ctx.function().paramList() == null) {
-                params = new LinkedList<>(); // sin parámetros
-            } else {
-                params = (LinkedList<Integer>) visit(ctx.function().paramList());
-            }
-
-            if (ident == null) {
-                // no existe, se puede meter a la tabla
-                this.symbolTable.insertMethod(ctx.function().ID().getSymbol(), type, params, ctx);
-                this.symbolTable.print();
-            } else {
-                // ya existe algo con ese nombre
-                if (ident instanceof SymbolsTable.VarIdent) {
-                    // si es una variable, se permite tener un método con el mismo nombre
-                    this.symbolTable.insertMethod(ctx.function().ID().getSymbol(), type, params, ctx);
-                } else {
-                    // si ya es un método, error: método duplicado
-                    syntaxError("Method already defined", ctx.function().ID().getSymbol());
-                }
-            }
-
-            // abrir un scope nuevo para los parámetros y el cuerpo de la función
-            symbolTable.openScope();
-
-            // meter los parámetros como variables en el nuevo scope
-            if (ctx.function().paramList() != null) {
-                for (AlphaCompilerParser.ParamContext pCtx : ctx.function().paramList().param()) {
-                    Token paramId = pCtx.typeDenoter().ID().getSymbol();
-                    Token pTypeDenoter = (Token) visit(pCtx.typeDenoter());
-                    int paramType = verifyType(pTypeDenoter.getText());
-                    this.symbolTable.insertVariableLevel(paramId, paramType, symbolTable.getActualLevel(), pCtx, false);
-                }
-            }
-
-            // marcar que no hemos encontrado return todavía
-            this.returnFoundStack.push(false);
-
-            // visitar el cuerpo de la función
-            visit(ctx.function().singleCommand());
-
-            // verificar si se encontró un return (solo si no es void)
-            boolean encontroReturn = this.returnFoundStack.pop();
-            if (!encontroReturn && type != 4) {
-                syntaxError("Missing return statement in function", ctx.function().ID().getSymbol());
-            }
-
-            symbolTable.print();
-            this.symbolTable.closeScope(); // cerrar el scope de la función
-            symbolTable.print();
-            this.methodStack.pop(); // sacar el tipo de la función de la pila
-        } else {
-            syntaxError("Invalid type!", ctx.function().ID().getSymbol());
-            this.methodStack.pop();
-        }
-        return null;
-    }
-
+    /**
+     * Visita un identificador usado como expresión primaria (lectura de variable).
+     *
+     * <p>Busca el identificador en la tabla de símbolos y verifica que sea una variable
+     * (no un método). Si lleva un {@code -} al frente, verifica que sea de tipo {@code int}.
+     * Decora el nodo {@code identifier} con un puntero a su declaración para que el encoder
+     * pueda ubicar la variable más adelante.</p>
+     *
+     * @return el tipo de la variable encontrada, o -1 si hay error
+     */
     @Override
     public Object visitIdPrimaryExpression(AlphaCompilerParser.IdPrimaryExpressionContext ctx) {
         int returnType = -1;
@@ -225,7 +292,7 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         if (ident != null) {
             if (ident instanceof SymbolsTable.VarIdent) {
                 returnType = ident.type;
-                // decorar el nodo del identifier con un puntero a su declaración
+                // decorar el nodo del identifier con un puntero a su declaración:
                 // esto lo usa el encoder después para saber dónde está la variable
                 ctx.identifier().decl = ident.decl;
 
@@ -246,6 +313,16 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
+    /**
+     * Visita una llamada a función usada dentro de una expresión (ej: {@code foo(5) + 3}).
+     *
+     * <p>Caso especial: {@code print} siempre se acepta sin validar tipos de argumentos.
+     * Para las demás funciones: busca el método en la tabla, verifica que los argumentos
+     * coincidan en cantidad y tipo con los parámetros declarados.
+     * Si lleva un {@code -} al frente, la función debe retornar {@code int}.</p>
+     *
+     * @return el tipo de retorno de la función, o -1 si hay error
+     */
     @Override
     public Object visitMethodCallPrimaryExpression(AlphaCompilerParser.MethodCallPrimaryExpressionContext ctx) {
         // llamada a función dentro de una expresión (ej: foo(5) + 3)
@@ -303,11 +380,19 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
-    @Override
-    public Object visitNumPrimaryExpression(AlphaCompilerParser.NumPrimaryExpressionContext ctx) {
-        return 0; // un número siempre es tipo int = 0
-    }
+    // -------------------------------------------------------------------------
+    // Visitor de expresiones compuestas
+    // -------------------------------------------------------------------------
 
+    /**
+     * Visita una expresión compuesta (una o más expresiones primarias separadas por operadores).
+     *
+     * <p>Evalúa el tipo de la primera expresión primaria y luego, por cada operador,
+     * verifica que los tipos de ambos operandos sean compatibles con dicho operador.
+     * El tipo resultante se actualiza en cada paso (ej: {@code int < int} produce {@code bool}).</p>
+     *
+     * @return el tipo resultante de la expresión completa, o -1 si hay incompatibilidad
+     */
     @Override
     public Object visitExpression(AlphaCompilerParser.ExpressionContext ctx) {
         int returnType = -1;
@@ -333,8 +418,23 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
-    // verifica qué operaciones son válidas entre qué tipos y devuelve el tipo resultante
-    // -1 si la combinación no es válida
+    /**
+     * Verifica qué operaciones son válidas entre qué tipos y devuelve el tipo resultante.
+     *
+     * <p>Reglas de compatibilidad:
+     * <ul>
+     *   <li>{@code +}: int+int=int, string+string=string (concatenación)</li>
+     *   <li>{@code -}, {@code *}, {@code /}, {@code %}: solo int op int = int</li>
+     *   <li>{@code ==}, {@code !=}: cualquier tipo consigo mismo produce bool</li>
+     *   <li>{@code <}, {@code >}, {@code <=}, {@code >=}: solo int o char, produce bool</li>
+     * </ul>
+     * </p>
+     *
+     * @param op operador a evaluar
+     * @param t1 tipo del operando izquierdo
+     * @param t2 tipo del operando derecho
+     * @return tipo resultante de la operación, o -1 si la combinación no es válida
+     */
     private int verifyOperatorTypes(Token op, int t1, int t2) {
         int returnType = -1;
         switch (op.getType()) {
@@ -416,16 +516,34 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
+    // -------------------------------------------------------------------------
+    // Visitors de tipos y parámetros
+    // -------------------------------------------------------------------------
+
+    /**
+     * Visita un denotador de tipo (ej: {@code int}, {@code char}, {@code bool}, {@code string}).
+     *
+     * @return el {@link Token} del identificador de tipo
+     */
     @Override
     public Object visitTypeDenoter(AlphaCompilerParser.TypeDenoterContext ctx) {
         return ctx.ID().getSymbol(); // devuelve el token del tipo (int, char, bool, string)
     }
 
+    /**
+     * Visita la definición de una función (delegada desde {@link #visitComplexDeclaration}).
+     */
     @Override
     public Object visitFunction(AlphaCompilerParser.FunctionContext ctx) {
         return super.visitFunction(ctx);
     }
 
+    /**
+     * Visita la lista de argumentos de una llamada a función.
+     * Construye una lista con el tipo de cada expresión argumento.
+     *
+     * @return {@link LinkedList} de tipos de los argumentos en orden
+     */
     @Override
     public Object visitArgumentList(AlphaCompilerParser.ArgumentListContext ctx) {
         // armar una lista con los tipos de cada argumento
@@ -442,6 +560,12 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return resultList;
     }
 
+    /**
+     * Visita un parámetro individual de la definición de una función.
+     * Verifica que el tipo declarado sea uno de los tipos válidos del lenguaje.
+     *
+     * @return el tipo numérico del parámetro, o -1 si el tipo no es válido
+     */
     @Override
     public Object visitParam(AlphaCompilerParser.ParamContext ctx) {
         // verificar que el tipo del parámetro sea válido
@@ -454,6 +578,12 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return type;
     }
 
+    /**
+     * Visita la lista de parámetros de una función.
+     * Construye una lista con el tipo de cada parámetro.
+     *
+     * @return {@link LinkedList} de tipos de los parámetros en orden
+     */
     @Override
     public Object visitParamList(AlphaCompilerParser.ParamListContext ctx) {
         // armar una lista con los tipos de cada parámetro
@@ -464,8 +594,14 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return resultList;
     }
 
-    // convierte el texto del tipo a su número interno (int=0, char=1, bool=2, string=3)
+    /**
+     * Convierte el texto de un tipo a su número interno.
+     *
+     * @param typeText nombre del tipo en texto ("int", "char", "bool", "string")
+     * @return número interno del tipo, o -1 si no es reconocido
+     */
     private int verifyType(String typeText) {
+        // convierte el texto del tipo a su número interno (int=0, char=1, bool=2, string=3)
         if (typeText.equals("int"))
             return 0;
         else if (typeText.equals("char")) {
@@ -479,6 +615,111 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Visitors de declaraciones
+    // -------------------------------------------------------------------------
+
+    /**
+     * Visita la declaración de una función (declaración compleja).
+     *
+     * <p>Proceso:
+     * <ol>
+     *   <li>Determina el tipo de retorno; si no tiene, se asume {@code void} (4).</li>
+     *   <li>Verifica que no exista un método con el mismo nombre en el scope actual.</li>
+     *   <li>Inserta el método en la tabla de símbolos.</li>
+     *   <li>Abre un scope nuevo y registra los parámetros como variables.</li>
+     *   <li>Visita el cuerpo de la función.</li>
+     *   <li>Verifica que exista un {@code return} si la función no es {@code void}.</li>
+     *   <li>Cierra el scope y saca el tipo de la pila de métodos.</li>
+     * </ol>
+     * </p>
+     */
+    @Override
+    public Object visitComplexDeclaration(AlphaCompilerParser.ComplexDeclarationContext ctx) {
+        Token id = null;
+        int type = -1;
+
+        // sacar el tipo de retorno de la función
+        if (ctx.function().typeDenoter() != null) {
+            id = (Token) visit(ctx.function().typeDenoter());
+            type = verifyType(id.getText());
+            this.methodStack.push(type); // meter el tipo a la pila para validar returns después
+        } else {
+            type = 4; // si no tiene tipo es void (4)
+            this.methodStack.push(type);
+        }
+
+        if (type != -1) {
+            LinkedList<Integer> params = null;
+
+            // buscar si ya existe algo con ese nombre en el nivel actual
+            SymbolsTable.Ident ident = this.symbolTable.searchActualLevel(ctx.function().ID().getText());
+
+            // armar la lista de tipos de parámetros
+            if (ctx.function().paramList() == null) {
+                params = new LinkedList<>(); // sin parámetros
+            } else {
+                params = (LinkedList<Integer>) visit(ctx.function().paramList());
+            }
+
+            if (ident == null) {
+                // no existe, se puede meter a la tabla
+                this.symbolTable.insertMethod(ctx.function().ID().getSymbol(), type, params, ctx);
+                this.symbolTable.print();
+            } else {
+                // ya existe algo con ese nombre
+                if (ident instanceof SymbolsTable.VarIdent) {
+                    // si es una variable, se permite tener un método con el mismo nombre
+                    this.symbolTable.insertMethod(ctx.function().ID().getSymbol(), type, params, ctx);
+                } else {
+                    // si ya es un método, error: método duplicado
+                    syntaxError("Method already defined", ctx.function().ID().getSymbol());
+                }
+            }
+
+            // abrir un scope nuevo para los parámetros y el cuerpo de la función
+            symbolTable.openScope();
+
+            // meter los parámetros como variables en el nuevo scope
+            if (ctx.function().paramList() != null) {
+                for (AlphaCompilerParser.ParamContext pCtx : ctx.function().paramList().param()) {
+                    Token paramId = pCtx.typeDenoter().ID().getSymbol();
+                    Token pTypeDenoter = (Token) visit(pCtx.typeDenoter());
+                    int paramType = verifyType(pTypeDenoter.getText());
+                    this.symbolTable.insertVariableLevel(paramId, paramType, symbolTable.getActualLevel(), pCtx, false);
+                }
+            }
+
+            // marcar que no hemos encontrado return todavía
+            this.returnFoundStack.push(false);
+
+            // visitar el cuerpo de la función
+            visit(ctx.function().singleCommand());
+
+            // verificar si se encontró un return (solo si no es void)
+            boolean encontroReturn = this.returnFoundStack.pop();
+            if (!encontroReturn && type != 4) {
+                syntaxError("Missing return statement in function", ctx.function().ID().getSymbol());
+            }
+
+            symbolTable.print();
+            this.symbolTable.closeScope(); // cerrar el scope de la función
+            symbolTable.print();
+            this.methodStack.pop(); // sacar el tipo de la función de la pila
+        } else {
+            syntaxError("Invalid type!", ctx.function().ID().getSymbol());
+            this.methodStack.pop();
+        }
+        return null;
+    }
+
+    /**
+     * Visita una declaración de variable simple (ej: {@code var x: int}).
+     *
+     * <p>Verifica que el tipo sea válido y que no exista una variable con el mismo
+     * nombre en el scope actual. Se permite tener un método y una variable con el
+     * mismo nombre, pero no dos variables en el mismo scope.</p>
+     */
     @Override
     public Object visitVarSingleDeclaration(AlphaCompilerParser.VarSingleDeclarationContext ctx) {
         // declaración de variable: verificar tipo y meterla a la tabla
@@ -506,16 +747,31 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Visita una declaración de constante con tipo explícito (variante 2).
+     * Delega al visitor interno del nodo.
+     */
     @Override
     public Object visitConstSingleDeclaration2(AlphaCompilerParser.ConstSingleDeclaration2Context ctx) {
         return super.visitConstSingleDeclaration2(ctx); // delega al de adentro
     }
 
+    /**
+     * Visita una declaración de variable con tipo explícito (variante 2).
+     * Delega al visitor interno del nodo.
+     */
     @Override
     public Object visitVarSingleDeclaration2(AlphaCompilerParser.VarSingleDeclaration2Context ctx) {
         return super.visitVarSingleDeclaration2(ctx); // delega al de adentro
     }
 
+    /**
+     * Visita una declaración de constante (ej: {@code const x ~ 42}).
+     *
+     * <p>El tipo se infiere de la expresión asignada, no se declara explícitamente.
+     * La constante se inserta en la tabla marcada con {@code isConstant = true}
+     * para que el TypeChecker impida reasignaciones posteriores.</p>
+     */
     @Override
     public Object visitConstSingleDeclaration(AlphaCompilerParser.ConstSingleDeclarationContext ctx) {
         // declaración de constante: el tipo se infiere de la expresión
@@ -545,11 +801,28 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Visita una declaración genérica y delega a cada declaración individual.
+     */
     @Override
     public Object visitDeclaration(AlphaCompilerParser.DeclarationContext ctx) {
         return super.visitDeclaration(ctx); // visita cada declaración individual
     }
 
+    // -------------------------------------------------------------------------
+    // Visitors de comandos
+    // -------------------------------------------------------------------------
+
+    /**
+     * Visita un comando {@code return}.
+     *
+     * <p>Evalúa el tipo de la expresión retornada (o {@code void} si no hay expresión)
+     * y lo compara con el tipo de retorno esperado de la función actual (tope de
+     * {@code methodStack}). Si coincide, marca en {@code returnFoundStack} que se
+     * encontró el return.</p>
+     *
+     * @return el tipo del valor retornado, o -1 si hay error
+     */
     @Override
     public Object visitReturnSingleCommand(AlphaCompilerParser.ReturnSingleCommandContext ctx) {
         int returnType;
@@ -583,12 +856,22 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return -1;
     }
 
+    /**
+     * Visita un bloque {@code begin...end}.
+     * Solo agrupa comandos, visita lo que hay adentro sin abrir un scope nuevo.
+     */
     @Override
     public Object visitBlockSingleCommand(AlphaCompilerParser.BlockSingleCommandContext ctx) {
         visitCommand(ctx.command()); // begin...end solo agrupa, visitar lo de adentro
         return null;
     }
 
+    /**
+     * Visita un bloque {@code let...in}.
+     *
+     * <p>Abre un nuevo scope, visita las declaraciones internas, visita el
+     * comando del cuerpo y cierra el scope al salir.</p>
+     */
     @Override
     public Object visitLetSingleCommand(AlphaCompilerParser.LetSingleCommandContext ctx) {
         this.symbolTable.openScope(); // abrir un nivel nuevo en la tabla
@@ -598,6 +881,14 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Visita un comando {@code while}.
+     *
+     * <p>Verifica que la condición sea de tipo {@code bool} y luego visita
+     * el cuerpo del ciclo.</p>
+     *
+     * @return el tipo de la expresión de condición, o -1 si hay error
+     */
     @Override
     public Object visitWhileSingleCommand(AlphaCompilerParser.WhileSingleCommandContext ctx) {
         Token if_ = ctx.WHILE().getSymbol();
@@ -614,6 +905,14 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
+    /**
+     * Visita un comando {@code if...then...else}.
+     *
+     * <p>Verifica que la condición sea de tipo {@code bool}. Visita siempre
+     * la rama {@code then} y, si existe, la rama {@code else}.</p>
+     *
+     * @return el tipo de la expresión de condición, o -1 si hay error
+     */
     @Override
     public Object visitIfSingleCommand(AlphaCompilerParser.IfSingleCommandContext ctx) {
         Token if_ = ctx.IF().getSymbol();
@@ -633,6 +932,13 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return returnType;
     }
 
+    /**
+     * Visita una llamada a función usada como comando (sin usar el valor de retorno).
+     *
+     * <p>Caso especial: {@code print} se acepta siempre. Para las demás funciones,
+     * verifica que exista en la tabla y que los argumentos coincidan con los
+     * parámetros en cantidad y tipo.</p>
+     */
     @Override
     public Object visitMethodCallSingleCommand(AlphaCompilerParser.MethodCallSingleCommandContext ctx) {
         // llamada a función como comando (sin usar el valor de retorno)
@@ -678,6 +984,19 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Visita una asignación (ej: {@code x := expr}).
+     *
+     * <p>Verifica que:
+     * <ul>
+     *   <li>El identificador del lado izquierdo exista en la tabla.</li>
+     *   <li>Sea una variable (no un método).</li>
+     *   <li>No sea una constante.</li>
+     *   <li>El tipo de la expresión sea compatible con el tipo declarado.</li>
+     * </ul>
+     * Decora el nodo {@code identifier} con un puntero a su declaración para
+     * que el encoder pueda ubicar la variable.</p>
+     */
     @Override
     public Object visitAssignSingleCommand(AlphaCompilerParser.AssignSingleCommandContext ctx) {
         // asignación: verificar que los tipos sean compatibles
@@ -718,6 +1037,10 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Visita un comando compuesto (varios {@code singleCommand} separados por punto y coma).
+     * Recorre cada uno y lo visita individualmente.
+     */
     @Override
     public Object visitCommand(AlphaCompilerParser.CommandContext ctx) {
         // recorrer cada singleCommand separado por punto y coma
@@ -727,6 +1050,13 @@ public class AlphaCompilerTypeChecker extends AlphaCompilerBaseVisitor<Object> {
         return null;
     }
 
+    /**
+     * Visita un nodo {@code identifier} y lo devuelve tal cual.
+     * El que lo llame (ej: {@link #visitAssignSingleCommand}) lo usa para decorarlo
+     * con un puntero a su declaración.
+     *
+     * @return el nodo {@link AlphaCompilerParser.IdentifierContext} sin modificar
+     */
     @Override
     public Object visitIdentifier(AlphaCompilerParser.IdentifierContext ctx) {
         return ctx; // devuelve el nodo tal cual, el que lo llame lo usa para decorarlo

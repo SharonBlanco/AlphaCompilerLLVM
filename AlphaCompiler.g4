@@ -90,7 +90,7 @@ singleCommand     : identifier ASSIGN expression                                
 declaration       :( (singleDeclaration| complexDeclaration) (SEMI (singleDeclaration | complexDeclaration))* )             ;
 complexDeclaration: function                                                                                                ;
 singleDeclaration : CONST ID VIR expression                                                                                 #constSingleDeclaration2
-                  | varSingleDeclaration                                                                                #varSingleDeclaration2;
+                  | varSingleDeclaration                                                                                    #varSingleDeclaration2;
 varSingleDeclaration
 locals[org.bytedeco.llvm.LLVM.LLVMValueRef nombreLLVM = null] //este es el nombre que llevaría en llvm, digamos que el nombre sería larguisimo, enllvm melo va a cambiar
 :   VAR ID COLON typeDenoter                                                                                                ;
